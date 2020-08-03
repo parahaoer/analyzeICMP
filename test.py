@@ -1,0 +1,5 @@
+a = ('a', 'b')
+b = ('a', 'b')
+c = ('a', 'c')
+print(b == c)
+print(a == b)
