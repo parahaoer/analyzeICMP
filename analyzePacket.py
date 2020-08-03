@@ -1,27 +1,27 @@
 from scapy.all import *
 import re
-from Node import Node
 
-def analyzePacket(data, linkedHashMap):
+def analyzePacket(data, pairs_dict, write_lines, No):
 
     if(is_ipv4_icmp(data)):
-        print(data.payload.payload.fields)
-        print(getICMPPacket(data))
+        
+        print(data.fields)
+        print(getICMPPacket(data).fields)
         print(getICMPPayload(data))
-        print('ICMPIcmpLen =' + str(getIcmpLen(data)) + "\n")
-        getICMPPair(data, linkedHashMap)
+
+        
+        getICMPPair(data, pairs_dict, write_lines, No)
 
     #print(type(data.payload))  #==><class 'scapy.layers.inet.IP'>  可以使用 help(scapy.layers.inet.IP) 查看帮助文档
 
 def is_ipv4_icmp(data):
     
     ip_packet = data.payload
-    return ip_packet.fields['version'] == 4 and ip_packet.fields['proto'] == 1
+    return data.fields['type'] == 2048 and ip_packet.fields['version'] == 4 and ip_packet.fields['proto'] == 1
     
 
 def getIcmpLen(data):
     ip_packet = data.payload
-    tcp_packet = ip_packet.payload
 
     ip_header_len = ip_packet.fields['ihl'] * 4
     ip_len = ip_packet.fields['len']
@@ -31,7 +31,7 @@ def getIcmpLen(data):
 def getICMPPacket(data):
     ip_packet = data.payload
     icmp_packet = ip_packet.payload
-    return icmp_packet.original
+    return icmp_packet
 
 def getICMPPayload(data):
     ip_packet = data.payload
@@ -41,12 +41,28 @@ def getICMPPayload(data):
     return str(icmp_payload.original)
 
 
-def getICMPPair(data, linkedHashMap):
+def getICMPPair(data, pairs_dict, write_lines, No):
     ip_packet = data.payload
     icmp_packet = ip_packet.payload
+
+    icmp_fileds = icmp_packet.fields
+    ICMPLen = getIcmpLen(data)
+
+
     id = icmp_packet.fields['id']
     seq = icmp_packet.fields['seq']
-    linkedHashMap.add(id, seq, icmp_packet)
+    key = (id, seq)
+    
+    if key not in pairs_dict.keys():
+        write_lines.append("\n")
+        write_lines.append('key=' + str(key))
+        pairs_dict[key] = []
+
+    pairs_dict[key].append(icmp_packet)
+
+    write_lines.append('No' + str(No) + ' ;ICMPLen=' + str(ICMPLen) + ' ;type=' + str(icmp_fileds['type']) + ' ;code=' + str(icmp_fileds['code']) + ' ;chksum=' + str(icmp_fileds['chksum']))
+    write_lines.append(str(icmp_packet))
+
     
 
 
